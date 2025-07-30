@@ -1,100 +1,65 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
   <title>PW Batches</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-      background: #f7f7f7;
-    }
-    h1 {
-      text-align: center;
-      color: #333;
-    }
-    .batch-list {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: 20px;
-      margin-top: 30px;
-    }
+    body { font-family: sans-serif; padding: 20px; }
+    h1 { color: #2c3e50; }
     .batch {
-      background: white;
-      border-radius: 10px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      overflow: hidden;
-      transition: 0.3s ease;
-    }
-    .batch:hover {
-      transform: scale(1.02);
+      border: 1px solid #ddd;
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 8px;
     }
     .batch img {
-      width: 100%;
-      height: 150px;
-      object-fit: cover;
-    }
-    .batch-content {
-      padding: 15px;
-    }
-    .batch-content h3 {
-      margin: 0;
-      font-size: 18px;
-      color: #1e88e5;
-    }
-    .batch-content p {
-      margin: 5px 0;
-      color: #444;
-    }
-    .batch-content a {
-      display: inline-block;
-      margin-top: 10px;
-      text-decoration: none;
-      color: white;
-      background: #1e88e5;
-      padding: 8px 12px;
+      max-width: 100%;
+      height: auto;
       border-radius: 5px;
     }
+    .loading { color: gray; }
   </style>
 </head>
 <body>
-  <h1>PW Free Batches</h1>
-  <div id="batches" class="batch-list">Loading...</div>
+  <h1>PW Batches (Live from API)</h1>
+  <p id="status" class="loading">Loading...</p>
+  <div id="batches"></div>
 
   <script>
-    const container = document.getElementById("batches");
-    const proxyUrl = "https://corsproxy.io/?";
-    const apiUrl = "https://api.suarkafan.xyz/mindmatrix/pwbatches/get/getAllBatchesSearch.php/?search=board";
+    const apiUrl = "https://api.suarkafan.xyz/mindmatrix/pwbatches/get/getAllBatchesSearch.php?search=board";
 
-    fetch(proxyUrl + apiUrl)
-      .then(res => res.json())
+    fetch(apiUrl)
+      .then(res => {
+        if (!res.ok) throw new Error("Network response was not ok");
+        return res.json();
+      })
       .then(data => {
-        container.innerHTML = "";
-        if (!data || !Array.isArray(data)) {
-          container.innerHTML = "No batches found.";
+        const list = document.getElementById("batches");
+        const status = document.getElementById("status");
+        status.textContent = '';
+
+        if (!Array.isArray(data)) {
+          status.textContent = "❌ Invalid data format.";
           return;
         }
 
         data.forEach(batch => {
-          const card = document.createElement("div");
-          card.className = "batch";
-
-          card.innerHTML = `
-            <img src="${batch.batch_banner}" alt="${batch.batch_name}" />
-            <div class="batch-content">
-              <h3>${batch.batch_name}</h3>
-              <p><strong>Exam:</strong> ${batch.batch_exam}</p>
-              <p><strong>Class:</strong> ${batch.batch_class}</p>
-              <a href="https://www.pw.live/study/batch/${batch.batch_slug}" target="_blank">Open Batch</a>
-            </div>
+          const div = document.createElement("div");
+          div.className = "batch";
+          div.innerHTML = `
+            <h2>${batch.batch_name}</h2>
+            <p><strong>Exam:</strong> ${batch.batch_exam}</p>
+            <p><strong>Class:</strong> ${batch.batch_class}</p>
+            <img src="${batch.batch_banner}" alt="Banner">
+            <br><br>
+            <a href="/course.html?slug=${batch.batch_slug}">Go to Course</a>
           `;
-          container.appendChild(card);
+          list.appendChild(div);
         });
       })
-      .catch(err => {
-        console.error("Error fetching batches:", err);
-        container.innerHTML = "⚠️ Failed to load batches. Server may be blocking SSL or CORS.";
+      .catch(error => {
+        document.getElementById("status").textContent = "⚠️ Failed to load batches. Server may be blocking SSL or CORS.";
+        console.error("Error fetching batches:", error);
       });
   </script>
 </body>
